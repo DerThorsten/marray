@@ -2,7 +2,7 @@
 /// Marray: Fast Runtime-Flexible Multi-dimensional Arrays and Views in C++.
 /// \newline
 ///
-/// Copyright (c) 2014 by Bjoern Andres, bjoern@andres.sc
+/// Copyright (c) 2013 by Bjoern Andres, bjoern@andres.sc
 ///
 /// \section section_abstract Short Description
 /// Marray is a single header file for fast multi-dimensional arrays and views 
@@ -67,15 +67,15 @@
 
 #include <cassert>
 #include <cstddef>
-#include <stdexcept>
+#include <stdexcept> // runtime_error
 #include <limits>
 #include <string>
 #include <sstream>
 #include <cstring> // memcpy
-#include <iterator> 
+#include <iterator> // reverse_iterator, distance
 #include <vector>
 #include <set>
-#include <iostream> 
+#include <iostream> // cout
 #include <memory> // allocator
 #include <numeric> // accumulate
 #include <functional> // std::multiplies
@@ -92,7 +92,7 @@ struct InitializationSkipping { }; ///< Flag to indicate initialization skipping
 
 static const bool Const = true; ///< Flag to be used with the template parameter isConst of View and Iterator.
 static const bool Mutable = false; ///< Flag to be used with the template parameter isConst of View and Iterator.
-static const CoordinateOrder defaultOrder = LastMajorOrder; ///< Default order of coordinate tuples.
+static const CoordinateOrder defaultOrder = FirstMajorOrder; ///< Default order of coordinate tuples.
 static const InitializationSkipping SkipInitialization = InitializationSkipping(); ///< Flag to indicate initialization skipping.
 
 template<class E, class T> 
@@ -107,23 +107,23 @@ template<class E, class T, class S, class BinaryFunctor>
 template<class E, class T, class S, class BinaryFunctor> 
     class BinaryViewExpressionScalarSecond;
 // \endcond suppress_doxygen
-template<class T, bool isConst = false, class A = std::allocator<std::size_t> > 
+template<class T, bool isConst = false, class A = std::allocator<std::size_t> >
     class View;
 #ifdef HAVE_CPP11_TEMPLATE_ALIASES
     template<class T, class A> using ConstView = View<T, true, A>;
 #endif
-template<class T, bool isConst, class A = std::allocator<std::size_t> > 
+template<class T, bool isConst, class A = std::allocator<std::size_t> >
     class Iterator;
 template<class T, class A = std::allocator<std::size_t> > class Marray;
 
 // assertion testing
-#ifdef NDEBUG
-    const bool MARRAY_NO_DEBUG = true; ///< General assertion testing disabled.
-    const bool MARRAY_NO_ARG_TEST = true; ///< Argument testing disabled.
-#else
-    const bool MARRAY_NO_DEBUG = false; ///< General assertion testing enabled.
-    const bool MARRAY_NO_ARG_TEST = false; ///< Argument testing enabled.
-#endif
+// #ifdef NDEBUG
+    static const bool MARRAY_NO_DEBUG = true; ///< General assertion testing disabled.
+    static const bool MARRAY_NO_ARG_TEST = true; ///< Argument testing disabled.
+// #else
+//    static const bool MARRAY_NO_DEBUG = false; ///< General assertion testing enabled.
+//    static const bool MARRAY_NO_ARG_TEST = false; ///< Argument testing enabled.
+//#endif
 
 // \cond suppress_doxygen
 namespace marray_detail {
@@ -268,6 +268,7 @@ class View
 : public ViewExpression<View<T, isConst, A>, T>
 {
 public:
+    typedef std::size_t size_type;
     typedef T value_type;
     typedef typename marray_detail::IfBool<isConst, const T*, T*>::type pointer;
     typedef const T* const_pointer;
@@ -328,7 +329,7 @@ public:
             const CoordinateOrder& = defaultOrder,
             const CoordinateOrder& = defaultOrder,
             const allocator_type& = allocator_type());
-        void assign(std::initializer_list<std::size_t>, 
+        void assign(std::initializer_list<std::size_t>,
             std::initializer_list<std::size_t>, pointer,
             const CoordinateOrder&, 
             const allocator_type& = allocator_type());
@@ -356,19 +357,19 @@ public:
         reference operator()(const std::size_t, const std::size_t) const;
         reference operator()(const std::size_t, const std::size_t, const std::size_t);
         reference operator()(const std::size_t, const std::size_t, const std::size_t) const;
-        reference operator()(const std::size_t, const std::size_t, const std::size_t, 
+        reference operator()(const std::size_t, const std::size_t, const std::size_t,
             const std::size_t);
-        reference operator()(const std::size_t, const std::size_t, const std::size_t, 
+        reference operator()(const std::size_t, const std::size_t, const std::size_t,
             const std::size_t) const;
-        reference operator()(const std::size_t, const std::size_t, const std::size_t, 
+        reference operator()(const std::size_t, const std::size_t, const std::size_t,
              const std::size_t, const std::size_t);
-        reference operator()(const std::size_t, const std::size_t, const std::size_t, 
+        reference operator()(const std::size_t, const std::size_t, const std::size_t,
             const std::size_t, const std::size_t) const;
-        reference operator()(const std::size_t, const std::size_t, const std::size_t, 
-            const std::size_t, const std::size_t, const std::size_t, const std::size_t, 
+        reference operator()(const std::size_t, const std::size_t, const std::size_t,
+            const std::size_t, const std::size_t, const std::size_t, const std::size_t,
             const std::size_t, const std::size_t, const std::size_t);
-        reference operator()(const std::size_t, const std::size_t, const std::size_t, 
-            const std::size_t, const std::size_t, const std::size_t, const std::size_t, 
+        reference operator()(const std::size_t, const std::size_t, const std::size_t,
+            const std::size_t, const std::size_t, const std::size_t, const std::size_t,
             const std::size_t, const std::size_t, const std::size_t) const;
     #else
         reference operator()(const std::size_t);
@@ -384,7 +385,7 @@ public:
                 std::size_t elementAccessHelper(const std::size_t, const std::size_t,
                     const Args...);
             template<typename... Args>
-                std::size_t elementAccessHelper(const std::size_t, const std::size_t, 
+                std::size_t elementAccessHelper(const std::size_t, const std::size_t,
                     const Args...) const;
         public:
     #endif
@@ -533,7 +534,7 @@ public:
     // STL random access iterator typedefs
     typedef typename std::random_access_iterator_tag iterator_category;
     typedef T value_type;
-    typedef std::ptrdiff_t difference_type;
+    typedef ptrdiff_t difference_type;
     typedef typename marray_detail::IfBool<isConst, const T*, T*>::type pointer;
     typedef typename marray_detail::IfBool<isConst, const T&, T&>::type reference;
 
@@ -545,8 +546,8 @@ public:
 
     // construction
     Iterator();
-    Iterator(const View<T, false, A>&, const std::size_t = 0); 
-    Iterator(View<T, false, A>&, const std::size_t = 0); 
+    Iterator(const View<T, false, A>&, const std::size_t = 0);
+    Iterator(View<T, false, A>&, const std::size_t = 0);
     Iterator(const View<T, true, A>&, const std::size_t = 0);
     Iterator(const Iterator<T, false, A>&);
         // conversion from mutable to const
@@ -1510,8 +1511,8 @@ template<class T, bool isConst, class A>
 inline std::size_t
 View<T, isConst, A>::elementAccessHelper
 (
-    const std::size_t Dim, 
-    const std::size_t value    
+    const std::size_t Dim,
+    const std::size_t value
 )
 {
     marray_detail::Assert(MARRAY_NO_ARG_TEST || (value < shape(Dim-1) ) );
@@ -1522,7 +1523,7 @@ template<class T, bool isConst, class A>
 inline std::size_t
 View<T, isConst, A>::elementAccessHelper
 (
-    const std::size_t Dim, 
+    const std::size_t Dim,
     const std::size_t value
 ) const
 {
@@ -1535,8 +1536,8 @@ template<typename... Args>
 inline std::size_t
 View<T, isConst, A>::elementAccessHelper
 (
-    const std::size_t Dim, 
-    const std::size_t value, 
+    const std::size_t Dim,
+    const std::size_t value,
     const Args... args
 )
 {
@@ -1549,8 +1550,8 @@ template<typename... Args>
 inline std::size_t
 View<T, isConst, A>::elementAccessHelper
 (
-    const std::size_t Dim, 
-    const std::size_t value, 
+    const std::size_t Dim,
+    const std::size_t value,
     const Args... args
 ) const
 {
@@ -1601,7 +1602,7 @@ template<typename... Args>
 inline typename View<T, isConst, A>::reference
 View<T, isConst, A>::operator()
 (
-    const std::size_t value, 
+    const std::size_t value,
     const Args... args
 )
 {
@@ -1615,13 +1616,13 @@ template<typename... Args>
 inline typename View<T, isConst, A>::reference
 View<T, isConst, A>::operator()
 (
-    const std::size_t value, 
+    const std::size_t value,
     const Args... args
 ) const
 {
     testInvariant();
     marray_detail::Assert( MARRAY_NO_DEBUG || ( data_ != 0 && sizeof...(args)+1 == dimension() ) );
-    return data_[ strides(0) * static_cast<std::size_t>(value) 
+    return data_[ strides(0) * static_cast<std::size_t>(value)
         + static_cast<std::size_t>(elementAccessHelper(sizeof...(args)+1, args...)) ];
 }
 
@@ -2218,7 +2219,7 @@ View<T, isConst, A>::reshape
     testInvariant();
     marray_detail::Assert(MARRAY_NO_DEBUG || isSimple());
     if(!MARRAY_NO_ARG_TEST) {
-        std::size_t size = std::accumulate(begin, end, static_cast<std::size_t>(1), 
+        std::size_t size = std::accumulate(begin, end, static_cast<std::size_t>(1),
             std::multiplies<std::size_t>());
         marray_detail::Assert(size == this->size());
     }
@@ -3473,7 +3474,7 @@ Marray<T, A>::Marray
 )
 : dataAllocator_(allocator)
 {
-    std::size_t size = std::accumulate(begin, end, static_cast<std::size_t>(1), 
+    std::size_t size = std::accumulate(begin, end, static_cast<std::size_t>(1),
         std::multiplies<std::size_t>());
     marray_detail::Assert(MARRAY_NO_ARG_TEST || size != 0);
     base::assign(begin, end, dataAllocator_.allocate(size), coordinateOrder, 
@@ -3507,7 +3508,7 @@ Marray<T, A>::Marray
 ) 
 : dataAllocator_(allocator)
 {
-    std::size_t size = std::accumulate(begin, end, static_cast<std::size_t>(1), 
+    std::size_t size = std::accumulate(begin, end, static_cast<std::size_t>(1),
         std::multiplies<std::size_t>());
     marray_detail::Assert(MARRAY_NO_ARG_TEST || size != 0);
     base::assign(begin, end, dataAllocator_.allocate(size), coordinateOrder, 
@@ -3536,12 +3537,14 @@ Marray<T, A>::Marray
 ) 
 : dataAllocator_(allocator)
 {
-    std::size_t size = std::accumulate(shape.begin(), shape.end(), 
+    std::size_t size = std::accumulate(shape.begin(), shape.end(),
         static_cast<std::size_t>(1), std::multiplies<std::size_t>());
     marray_detail::Assert(MARRAY_NO_ARG_TEST || size != 0);
     base::assign(shape.begin(), shape.end(), dataAllocator_.allocate(size), 
                  coordinateOrder, coordinateOrder, allocator); 
-    std::fill(this->data_, this->data_+size, value);
+    for(std::size_t j=0; j<size; ++j) {
+        this->data_[j] = value;
+    }
     testInvariant();
 }
 #endif
@@ -4520,7 +4523,7 @@ Iterator<T, isConst, A>::hasMore() const
 /// \return index Index.
 ///
 template<class T, bool isConst, class A>
-inline std::size_t 
+inline std::size_t
 Iterator<T, isConst, A>::index() const
 {
     return index_;
@@ -4560,15 +4563,15 @@ public:
     typedef E expression_type;
     typedef T value_type;
 
-    const std::size_t dimension() const 
+    const std::size_t dimension() const
         { return static_cast<const E&>(*this).dimension(); }
-    const std::size_t size() const 
+    const std::size_t size() const
         { return static_cast<const E&>(*this).size(); }
-    const std::size_t shape(const std::size_t j) const 
+    const std::size_t shape(const std::size_t j) const
         { return static_cast<const E&>(*this).shape(j); }
-    const std::size_t* shapeBegin() const 
+    const std::size_t* shapeBegin() const
         { return static_cast<const E&>(*this).shapeBegin(); }
-    const std::size_t* shapeEnd() const 
+    const std::size_t* shapeEnd() const
         { return static_cast<const E&>(*this).shapeEnd(); }
     template<class Tv, bool isConst, class A> 
         bool overlaps(const View<Tv, isConst, A>& v) const
@@ -4582,11 +4585,11 @@ public:
             { return static_cast<const E&>(*this)(it); }
     const T& operator()(const std::size_t c0, const std::size_t c1) const
         { return static_cast<const E&>(*this)(c0, c1); }
-    const T& operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2) const 
+    const T& operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2) const
         { return static_cast<const E&>(*this)(c0, c1, c2); }
-    const T& operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3) const 
+    const T& operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3) const
         { return static_cast<const E&>(*this)(c0, c1, c2, c3); }
-    const T& operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3, const std::size_t c4) const 
+    const T& operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3, const std::size_t c4) const
         { return static_cast<const E&>(*this)(c0, c1, c2, c3, c4); }
     const T& operator[](const std::size_t offset) const
         { return static_cast<const E&>(*this)[offset]; }
@@ -4636,15 +4639,15 @@ public:
         : e_(e), // cast!
           unaryFunctor_(UnaryFunctor()) 
         {}
-    const std::size_t dimension() const 
+    const std::size_t dimension() const
         { return e_.dimension(); }
-    const std::size_t size() const 
+    const std::size_t size() const
         { return e_.size(); }
-    const std::size_t shape(const std::size_t j) const 
+    const std::size_t shape(const std::size_t j) const
         { return e_.shape(j); }
-    const std::size_t* shapeBegin() const 
+    const std::size_t* shapeBegin() const
         { return e_.shapeBegin(); }
-    const std::size_t* shapeEnd() const 
+    const std::size_t* shapeEnd() const
         { return e_.shapeEnd(); }
     template<class Tv, bool isConst, class A> 
         bool overlaps(const View<Tv, isConst, A>& v) const
@@ -4658,11 +4661,11 @@ public:
             { return unaryFunctor_(e_(it)); }
     const T operator()(const std::size_t c0, const std::size_t c1) const
         { return unaryFunctor_(e_(c0, c1)); }
-    const T operator()(const std::size_t c0, const std::size_t c1,const std::size_t c2) const 
+    const T operator()(const std::size_t c0, const std::size_t c1,const std::size_t c2) const
         { return unaryFunctor_(e_(c0, c1, c2)); }
-    const T operator()(const std::size_t c0, const std::size_t c1,const std::size_t c2, const std::size_t c3) const 
+    const T operator()(const std::size_t c0, const std::size_t c1,const std::size_t c2, const std::size_t c3) const
         { return unaryFunctor_(e_(c0, c1, c2, c3)); }
-    const T operator()(const std::size_t c0, const std::size_t c1,const std::size_t c2, const std::size_t c3, const std::size_t c4) const 
+    const T operator()(const std::size_t c0, const std::size_t c1,const std::size_t c2, const std::size_t c3, const std::size_t c4) const
         { return unaryFunctor_(e_(c0, c1, c2, c3, c4)); }
     const T operator[](const std::size_t offset) const
         { return unaryFunctor_(e_[offset]); }
@@ -4717,15 +4720,15 @@ public:
                 }
             }
         }
-    const std::size_t dimension() const 
+    const std::size_t dimension() const
         { return e1_.dimension() < e2_.dimension() ? e2_.dimension() : e1_.dimension(); }
-    const std::size_t size() const 
+    const std::size_t size() const
         { return e1_.size() < e2_.size() ? e2_.size() : e1_.size(); }
-    const std::size_t shape(const std::size_t j) const 
+    const std::size_t shape(const std::size_t j) const
         { return e1_.dimension() < e2_.dimension() ? e2_.shape(j) : e1_.shape(j); }
-    const std::size_t* shapeBegin() const 
+    const std::size_t* shapeBegin() const
         { return e1_.dimension() < e2_.dimension() ? e2_.shapeBegin() : e1_.shapeBegin(); }
-    const std::size_t* shapeEnd() const 
+    const std::size_t* shapeEnd() const
         { return e1_.dimension() < e2_.dimension() ? e2_.shapeEnd() : e1_.shapeEnd(); }
     template<class Tv, bool isConst, class A> 
         bool overlaps(const View<Tv, isConst, A>& v) const
@@ -4740,11 +4743,11 @@ public:
             { return binaryFunctor_(e1_(it), e2_(it)); }
     const value_type operator()(const std::size_t c0, const std::size_t c1) const
         { return binaryFunctor_(e1_(c0, c1), e2_(c0, c1)); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2) const
         { return binaryFunctor_(e1_(c0, c1, c2), e2_(c0, c1, c2)); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3) const
         { return binaryFunctor_(e1_(c0, c1, c2, c3), e2_(c0, c1, c2, c3)); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3, const std::size_t c4) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3, const std::size_t c4) const
         { return binaryFunctor_(e1_(c0, c1, c2, c3, c4), e2_(c0, c1, c2, c3, c4)); }
     const value_type operator[](const std::size_t offset) const
         { return binaryFunctor_(e1_[offset], e2_[offset]); }
@@ -4794,15 +4797,15 @@ public:
         : e_(e), // cast!
           scalar_(scalar), binaryFunctor_(BinaryFunctor()) 
         { }
-    const std::size_t dimension() const 
+    const std::size_t dimension() const
         { return e_.dimension(); }
-    const std::size_t size() const 
+    const std::size_t size() const
         { return e_.size(); }
-    const std::size_t shape(const std::size_t j) const 
+    const std::size_t shape(const std::size_t j) const
         { return e_.shape(j); }
-    const std::size_t* shapeBegin() const 
+    const std::size_t* shapeBegin() const
         { return e_.shapeBegin(); }
-    const std::size_t* shapeEnd() const 
+    const std::size_t* shapeEnd() const
         { return e_.shapeEnd(); }
     template<class Tv, bool isConst, class A> 
         bool overlaps(const View<Tv, isConst, A>& v) const
@@ -4816,11 +4819,11 @@ public:
             { return binaryFunctor_(scalar_, e_(it)); }
     const value_type operator()(const std::size_t c0, const std::size_t c1) const
         { return binaryFunctor_(scalar_, e_(c0, c1)); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2) const
         { return binaryFunctor_(scalar_, e_(c0, c1, c2)); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3) const
         { return binaryFunctor_(scalar_, e_(c0, c1, c2, c3)); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3, const std::size_t c4) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3, const std::size_t c4) const
         { return binaryFunctor_(scalar_, e_(c0, c1, c2, c3, c4)); }
     const value_type operator[](const std::size_t offset) const
         { return binaryFunctor_(scalar_, e_[offset]); }
@@ -4868,15 +4871,15 @@ public:
         : e_(e), // cast!
           scalar_(scalar), binaryFunctor_(BinaryFunctor())
         { }
-    const std::size_t dimension() const 
+    const std::size_t dimension() const
         { return e_.dimension(); }
-    const std::size_t size() const 
+    const std::size_t size() const
         { return e_.size(); }
-    const std::size_t shape(const std::size_t j) const 
+    const std::size_t shape(const std::size_t j) const
         { return e_.shape(j); }
-    const std::size_t* shapeBegin() const 
+    const std::size_t* shapeBegin() const
         { return e_.shapeBegin(); }
-    const std::size_t* shapeEnd() const 
+    const std::size_t* shapeEnd() const
         { return e_.shapeEnd(); }
     template<class Tv, bool isConst, class A> 
         bool overlaps(const View<Tv, isConst, A>& v) const
@@ -4890,11 +4893,11 @@ public:
             { return binaryFunctor_(e_(it), scalar_); }
     const value_type operator()(const std::size_t c0, const std::size_t c1) const
         { return binaryFunctor_(e_(c0, c1), scalar_); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2) const
         { return binaryFunctor_(e_(c0, c1, c2), scalar_); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3) const
         { return binaryFunctor_(e_(c0, c1, c2, c3), scalar_); }
-    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3, const std::size_t c4) const 
+    const value_type operator()(const std::size_t c0, const std::size_t c1, const std::size_t c2, const std::size_t c3, const std::size_t c4) const
         { return binaryFunctor_(e_(c0, c1, c2, c3, c4), scalar_); }
     const value_type operator[](const std::size_t offset) const
         { return binaryFunctor_(e_[offset], scalar_); }
@@ -4938,7 +4941,7 @@ public:
 
     Geometry(const allocator_type& = allocator_type());
     Geometry(const std::size_t, const CoordinateOrder& = defaultOrder,
-        const std::size_t = 0, const bool = true, 
+        const std::size_t = 0, const bool = true,
         const allocator_type& = allocator_type());
     template<class ShapeIterator>
         Geometry(ShapeIterator, ShapeIterator,
@@ -5177,7 +5180,7 @@ Geometry<A>::resize
     if(dimension != dimension_) {
         std::size_t* newShape = allocator_.allocate(dimension*3);
         std::size_t* newShapeStrides = newShape + dimension;
-        std::size_t* newStrides = newShapeStrides + dimension; 
+        std::size_t* newStrides = newShapeStrides + dimension;
         for(std::size_t j=0; j<( (dimension < dimension_) ? dimension : dimension_); ++j) {
             // save existing entries
             newShape[j] = shape(j);
@@ -5193,14 +5196,14 @@ Geometry<A>::resize
 }
 
 template<class A>
-inline const std::size_t 
+inline const std::size_t
 Geometry<A>::dimension() const
 {
     return dimension_; 
 }
 
 template<class A>
-inline const std::size_t 
+inline const std::size_t
 Geometry<A>::shape(const std::size_t j) const
 { 
     Assert(MARRAY_NO_DEBUG || j<dimension_); 
@@ -5208,7 +5211,7 @@ Geometry<A>::shape(const std::size_t j) const
 }
 
 template<class A>
-inline std::size_t& 
+inline std::size_t&
 Geometry<A>::shape(const std::size_t j)
 { 
     Assert(MARRAY_NO_DEBUG || j<dimension_); 
@@ -5216,7 +5219,7 @@ Geometry<A>::shape(const std::size_t j)
 }
 
 template<class A>
-inline const std::size_t 
+inline const std::size_t
 Geometry<A>::shapeStrides
 (
     const std::size_t j
@@ -5227,7 +5230,7 @@ Geometry<A>::shapeStrides
 }
 
 template<class A>
-inline std::size_t& 
+inline std::size_t&
 Geometry<A>::shapeStrides
 (
     const std::size_t j
@@ -5238,7 +5241,7 @@ Geometry<A>::shapeStrides
 }
 
 template<class A>
-inline const std::size_t 
+inline const std::size_t
 Geometry<A>::strides
 (
     const std::size_t j
@@ -5249,7 +5252,7 @@ Geometry<A>::strides
 }
 
 template<class A>
-inline std::size_t& 
+inline std::size_t&
 Geometry<A>::strides
 (
     const std::size_t j
@@ -5260,98 +5263,98 @@ Geometry<A>::strides
 }
 
 template<class A>
-inline const std::size_t* 
+inline const std::size_t*
 Geometry<A>::shapeBegin() const
 { 
     return shape_; 
 }
 
 template<class A>
-inline std::size_t* 
+inline std::size_t*
 Geometry<A>::shapeBegin()
 { 
     return shape_; 
 }
 
 template<class A>
-inline const std::size_t* 
+inline const std::size_t*
 Geometry<A>::shapeEnd() const 
 { 
     return shape_ + dimension_; 
 }
 
 template<class A>
-inline std::size_t* 
+inline std::size_t*
 Geometry<A>::shapeEnd() 
 { 
     return shape_ + dimension_; 
 }
 
 template<class A>
-inline const std::size_t* 
+inline const std::size_t*
 Geometry<A>::shapeStridesBegin() const 
 { 
     return shapeStrides_; 
 }
 
 template<class A>
-inline std::size_t* 
+inline std::size_t*
 Geometry<A>::shapeStridesBegin() 
 { 
     return shapeStrides_; 
 }
 
 template<class A>
-inline const std::size_t* 
+inline const std::size_t*
 Geometry<A>::shapeStridesEnd() const 
 { 
     return shapeStrides_ + dimension_; 
 }
 
 template<class A>
-inline std::size_t* 
+inline std::size_t*
 Geometry<A>::shapeStridesEnd() 
 { 
     return shapeStrides_ + dimension_; 
 }
 
 template<class A>
-inline const std::size_t* 
+inline const std::size_t*
 Geometry<A>::stridesBegin() const 
 { 
     return strides_; 
 }
 
 template<class A>
-inline std::size_t* 
+inline std::size_t*
 Geometry<A>::stridesBegin() 
 { 
     return strides_; 
 }
 
 template<class A>
-inline const std::size_t* 
+inline const std::size_t*
 Geometry<A>::stridesEnd() const 
 { 
     return strides_ + dimension_; 
 }
 
 template<class A>
-inline std::size_t* 
+inline std::size_t*
 Geometry<A>::stridesEnd() 
 { 
     return strides_ + dimension_; 
 }
 
 template<class A>
-inline const std::size_t 
+inline const std::size_t
 Geometry<A>::size() const
 { 
     return size_; 
 }
 
 template<class A>
-inline std::size_t& 
+inline std::size_t&
 Geometry<A>::size()
 { 
     return size_; 
