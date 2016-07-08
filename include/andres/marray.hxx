@@ -32,6 +32,7 @@
 ///   - HAVE_CPP11_VARIADIC_TEMPLATES
 ///   - HAVE_CPP11_INITIALIZER_LISTS
 ///   - HAVE_CPP11_TEMPLATE_ALIASES
+///   - HAVE_CPP11_STD_ARRAY
 ///   .
 /// 
 /// \section section_license License
@@ -82,7 +83,9 @@
 #ifdef HAVE_CPP11_INITIALIZER_LISTS
     #include <initializer_list>
 #endif
-
+#ifdef HAVE_CPP11_STD_ARRAY
+    #include <array>
+#endif
 /// The public API.
 namespace andres {
 
@@ -349,7 +352,18 @@ public:
     template<class TLocal, bool isConstLocal, class ALocal> 
         bool overlaps(const View<TLocal, isConstLocal, ALocal>&) const;
 
+
+
     // element access
+    #ifdef HAVE_CPP11_STD_ARRAY
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 1> & array);
+
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 2> & array);
+
+    #endif
+
     template<class U> reference operator()(U); 
     template<class U> reference operator()(U) const; 
     #ifndef HAVE_CPP11_VARIADIC_TEMPLATES
@@ -2804,8 +2818,10 @@ View<T, isConst, A>::operator[]
 template<class T, bool isConst, class A> 
 inline void
 View<T, isConst, A>::testInvariant() const
-{
+{   
+    /*
     if(!MARRAY_NO_DEBUG) {
+        std::cout<<"JOOO\n";
         if(geometry_.dimension() == 0) {
             marray_detail::Assert(geometry_.isSimple() == true);
             if(data_ != 0) { // scalar
@@ -2846,6 +2862,7 @@ View<T, isConst, A>::testInvariant() const
             }
         }
     }
+    */
 }
 
 /// Check whether two Views overlap.
