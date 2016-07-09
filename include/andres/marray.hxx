@@ -356,13 +356,59 @@ public:
 
     // element access
     #ifdef HAVE_CPP11_STD_ARRAY
-        template<class COORD_T>
-        reference operator()(const std::array<COORD_T, 1> & array);
 
         template<class COORD_T>
-        reference operator()(const std::array<COORD_T, 2> & array);
+        reference operator()(const std::array<COORD_T, 1> & c){ 
+            return this->operator()(c[0]);
+        }
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 2> & c){ 
+            return this->operator()(c[0], c[1]);
+        }
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 3> & c){ 
+            return this->operator()(c[0], c[1], c[2]);
+        }
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 4> & c){ 
+            return this->operator()(c[0], c[1], c[2], c[3]);
+        }
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 5> & c){ 
+            return this->operator()(c[0], c[1], c[2], c[3], c[4]);
+        }
+        template<size_t DIM, class COORD_T>
+        reference operator()(const std::array<COORD_T, DIM> & c){ 
+            return this->operator()(c.begin());
+        }
 
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 1> & c)const{ 
+            return this->operator()(c[0]);
+        }
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 2> & c)const{ 
+            return this->operator()(c[0], c[1]);
+        }
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 3> & c)const{ 
+            return this->operator()(c[0], c[1], c[2]);
+        }
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 4> & c)const{ 
+            return this->operator()(c[0], c[1], c[2], c[3]);
+        }
+        template<class COORD_T>
+        reference operator()(const std::array<COORD_T, 5> & c)const{ 
+            return this->operator()(c[0], c[1], c[2], c[3], c[4]);
+        }
+        template<size_t DIM, class COORD_T>
+        reference operator()(const std::array<COORD_T, DIM> & c)const{ 
+            return this->operator()(c.begin());
+        }
     #endif
+
+
 
     template<class U> reference operator()(U); 
     template<class U> reference operator()(U) const; 
