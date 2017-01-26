@@ -342,6 +342,7 @@ public:
     const std::size_t dimension() const;
     const std::size_t size() const;
     const std::size_t shape(const std::size_t) const;
+    const std::vector<size_t> shape() const;
     const std::size_t* shapeBegin() const;
     const std::size_t* shapeEnd() const;
     const std::size_t strides(const std::size_t) const;
@@ -513,6 +514,10 @@ public:
     View<T, isConst, A> shiftedView(const int) const;
     View<T, isConst, A> boundView(const std::size_t, const std::size_t = 0) const;
     View<T, isConst, A> squeezedView() const;
+    
+    // overload the bound view to be compatible with vigra multiarrays
+    template<unsigned AXIS>
+    View<T, isConst, A> bind(const std::size_t) const;
 
     #ifdef HAVE_CPP11_INITIALIZER_LISTS
         void reshape(std::initializer_list<std::size_t>);
@@ -1731,6 +1736,25 @@ View<T, isConst, A>::shape
     return geometry_.shape(dimension);
 }
 
+/// Get the shape as vector.
+///
+/// \param dimension Dimension
+/// \return Shape in that dimension.
+///
+template<class T, bool isConst, class A> 
+inline const std::vector<std::size_t>
+View<T, isConst, A>::shape
+(
+) const
+{
+    testInvariant();
+    marray_detail::Assert(MARRAY_NO_DEBUG || data_ != 0);
+    std::vector<std::size_t> ret( this->dimension() );
+    for( int d = 0; d < this->dimension(); ++d )
+        ret[d] = geometry_.shape(d);
+    return ret;
+}
+
 /// Get a constant iterator to the beginning of the shape vector.
 ///
 /// \return iterator.
@@ -2403,6 +2427,17 @@ View<T, isConst, A>::boundView
         v.testInvariant();
         return v;
     }
+}
+    
+template<class T, bool isConst, class A> 
+template<unsigned AXIS>
+View<T, isConst, A>
+View<T, isConst, A>::bind
+(
+    const std::size_t value
+) const
+{
+    return this->boundView(AXIS, value);
 }
 
 /// Remove singleton dimensions by setting their coordinates to zero.
